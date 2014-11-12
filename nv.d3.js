@@ -5415,6 +5415,9 @@ nv.models.lineChart = function() {
     , showXAxis = true
     , showYAxis = true
     , rightAlignYAxis = false
+    , rotateLabels = 0
+    , staggerLabels = false
+    , reduceXTicks = true // if false a tick will show for every data point
     , useInteractiveGuideline = false
     , tooltips = true
     , tooltip = function(key, x, y, e, graph) {
@@ -5433,6 +5436,9 @@ nv.models.lineChart = function() {
   xAxis
     .orient('bottom')
     .tickPadding(7)
+    .highlightZero(true)
+    .showMaxMin(false)
+    .tickFormat(function(d) { return d })
     ;
   yAxis
     .orient((rightAlignYAxis) ? 'right' : 'left')
@@ -5605,7 +5611,7 @@ nv.models.lineChart = function() {
       if (showXAxis) {
         xAxis
           .scale(x)
-          .ticks( availableWidth / 100 )
+          .ticks( 100 )
           .tickSize(-availableHeight, 0);
 
         g.select('.nv-x.nv-axis')
@@ -5613,6 +5619,50 @@ nv.models.lineChart = function() {
         g.select('.nv-x.nv-axis')
             .transition()
             .call(xAxis);
+        
+        var xTicks = g.select('.nv-x.nv-axis > g').selectAll('g');
+        
+        xTicks
+              .selectAll('line, text')
+              .style('opacity', 1)
+        
+        if (staggerLabels) {
+              var getTranslate = function(x,y) {
+                  return "translate(" + x + "," + y + ")";
+              };
+
+              var staggerUp = 5, staggerDown = 17;  //pixels to stagger by
+              // Issue #140
+              xTicks
+                .selectAll("text")
+                .attr('transform', function(d,i,j) { 
+                    return  getTranslate(0, (j % 2 == 0 ? staggerUp : staggerDown));
+                  });
+
+              var totalInBetweenTicks = d3.selectAll(".nv-x.nv-axis .nv-wrap g g text")[0].length;
+              g.selectAll(".nv-x.nv-axis .nv-axisMaxMin text")
+                .attr("transform", function(d,i) {
+                    return getTranslate(0, (i === 0 || totalInBetweenTicks % 2 !== 0) ? staggerDown : staggerUp);
+                });
+          }
+        
+        if (reduceXTicks)
+            xTicks
+              .filter(function(d,i) {
+                  return i % Math.ceil(data[0].values.length / (availableWidth / 100)) !== 0;
+                })
+              .selectAll('text, line')
+              .style('opacity', 0);
+        
+        if(rotateLabels)
+            xTicks
+              .selectAll('.tick text')
+              .attr('transform', 'rotate(' + rotateLabels + ' 0,0)')
+              .style('text-anchor', rotateLabels > 0 ? 'start' : 'end');
+          
+          g.select('.nv-x.nv-axis').selectAll('g.nv-axisMaxMin text')
+              .style('opacity', 1);
+              
       }
 
       if (showYAxis) {
@@ -5783,6 +5833,12 @@ nv.models.lineChart = function() {
     legend.color(color);
     return chart;
   };
+  
+  chart.staggerLabels = function(_) {
+    if (!arguments.length) return staggerLabels;
+    staggerLabels = _;
+    return chart;
+  };
 
   chart.showLegend = function(_) {
     if (!arguments.length) return showLegend;
@@ -5801,6 +5857,18 @@ nv.models.lineChart = function() {
     showYAxis = _;
     return chart;
   };
+  
+  chart.reduceXTicks= function(_) {
+    if (!arguments.length) return reduceXTicks;
+    reduceXTicks = _;
+    return chart;
+  };
+  
+  chart.rotateLabels = function(_) {
+    if (!arguments.length) return rotateLabels;
+    rotateLabels = _;
+    return chart;
+  }
 
   chart.rightAlignYAxis = function(_) {
     if(!arguments.length) return rightAlignYAxis;
