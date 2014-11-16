@@ -20,6 +20,7 @@ nv.models.lineChart = function() {
     , showXAxis = true
     , showYAxis = true
     , rightAlignYAxis = false
+    , reduceXTicks = false // if false a tick will show for every data point
     , useInteractiveGuideline = false
     , tooltips = true
     , tooltip = function(key, x, y, e, graph) {
@@ -218,6 +219,17 @@ nv.models.lineChart = function() {
         g.select('.nv-x.nv-axis')
             .transition()
             .call(xAxis);
+            
+        var xTicks = g.select('.nv-x.nv-axis > g').selectAll('g');
+        
+        if (reduceXTicks)
+            xTicks
+              .filter(function(d,i) {
+                  return i % Math.ceil(data[0].values.length / (availableWidth / 100)) !== 0;
+                })
+              .selectAll('text, line')
+              .style('opacity', 0);
+              
       }
 
       if (showYAxis) {
@@ -404,6 +416,12 @@ nv.models.lineChart = function() {
   chart.showYAxis = function(_) {
     if (!arguments.length) return showYAxis;
     showYAxis = _;
+    return chart;
+  };
+  
+  chart.reduceXTicks= function(_) {
+    if (!arguments.length) return reduceXTicks;
+    reduceXTicks = _;
     return chart;
   };
 

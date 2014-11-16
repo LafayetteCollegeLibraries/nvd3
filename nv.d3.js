@@ -5611,6 +5611,8 @@ nv.models.lineChart = function() {
       if (showXAxis) {
         xAxis
           .scale(x)
+          // @author goodnowt changed to 100 ticks, resolves missing labels
+          // .ticks( availableWidth / 100 )
           .ticks( 100 )
           .tickSize(-availableHeight, 0);
 
